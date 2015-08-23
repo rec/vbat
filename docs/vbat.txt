@@ -1,0 +1,3 @@
+open vbat -n SESSIONNAME
+
+open vbat -n SESSIONNAME -i TESTIMAGE.JPG
