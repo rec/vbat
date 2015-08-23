@@ -12,7 +12,6 @@ class Vbat(object):
     def __init__(self, cmdname, cmdimage):
         self.__field = []
         name = ""
-        print "bla"
 
         if name is not None:
             name = cmdname
@@ -45,6 +44,7 @@ class Vbat(object):
             c = b - a
             print 50 / c.total_seconds()
         else:
+            # run from camera
             a = datetime.now()
             for i in range(20):
                 self.__grabber.take_image()
