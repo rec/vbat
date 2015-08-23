@@ -16,7 +16,7 @@ vbat:
 - Start vbat -n NAME (NAME is the seassion name you give in vbat-config).
 - You get an output with the recognised values for latutude, longitude an hight.
 Or:
-- Start vbat -NAME -i TEST.JPG (TEST.JPG is a picture grabbed from the video stream).
+- Start vbat -NAME -i TEST.JPG (TEST.JPG is a picture grabbed from the video stream). vbat -n zz -i test.jpeg runs the current test-scenario.
 - You get an output with the recognised values for latutude, longitude an hight.
 
 
