@@ -19,15 +19,4 @@ Or:
 - Start vbat -NAME -i TEST.JPG (TEST.JPG is a picture grabbed from the video stream). vbat -n zz -i test.jpeg runs the current test-scenario.
 - You get an output with the recognised values for latutude, longitude an hight.
 
-
-TO DO:
-vbat-config:
-- Code has to be cleaned up.
-- The ability to assign a character to the pictures cut from the fields has to be created.
-- Several bugs musst be removed.
-
-vbat:
-- Must be rewritten the work on multiple cores.
-
-
 There are images to create the fields (black camera image with OSD overlay) and test images in the folder "images"
