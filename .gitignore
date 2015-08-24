@@ -1,0 +1,5 @@
+# Compiled Python files.
+*.pyc
+
+# Stupid Mac directory files.
+.DS_Store
