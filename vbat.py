@@ -9,16 +9,8 @@ from lib.file_handler import loadconfig
 from lib.CamLib import *
 
 class Vbat(object):
-    def __init__(self, cmdname, cmdimage):
+    def __init__(self, name):
         self.__field = []
-        name = ""
-
-        if name is not None:
-            name = cmdname
-        else:
-            # if no specific file was parsed, a random one from the directory "saves/" is choosen
-            name = os.listdir("saves/")[0]
-
         video = loadconfig("video")
         camx = int(loadconfig("camx"))
         camy = int(loadconfig("camy"))
@@ -28,30 +20,19 @@ class Vbat(object):
         coofile = "saves/" + name + "/" + name + ".coo"
         self.createfield(coofile)
         self.TemplateFolder = "saves/" + name + "/" + name + ".templates"
-
         self.__matrix, self.__antimatrix, self.__characterdata = self.__creatematrix()
-
         self.__grabber = CamLib(video, int(camx), int(camy))
         self.__white = White(self.__grayvalue)
 
-        if cmdimage is not None:
-            # run from image
-            self.__grabber.load_image(cmdimage)
-            a = datetime.now()
-            for i in range(50):
-                print self.get_data()
-            b = datetime.now()
-            c = b - a
-            print 50 / c.total_seconds()
-        else:
+    def image_test(self, test_image):
+        # run from image
+        self.__grabber.load_image(test_image)
+        return self.get_data()
+
+    def run(self):
             # run from camera
-            a = datetime.now()
-            for i in range(20):
-                self.__grabber.take_image()
-                print self.get_data()
-            b = datetime.now()
-            c = b - a
-            print 20 / c.total_seconds()
+            self.__grabber.take_image()
+            return self.get_data()
 
     def createfield(self, coofile):
         f = open(coofile, "r")
@@ -191,4 +172,10 @@ if __name__ == '__main__':
     parser.add_option("-i", "--image", dest="imagefile")
     parser.add_option("-n", "--name", dest="name")
     (options, arguments) = parser.parse_args()
-    vbati = Vbat(options.name, options.imagefile)
+    if options.name is not None:
+        vbati = Vbat(options.name)
+        if options.imagefile is not None:
+            print vbati.image_test(options.imagefile)
+        else:
+            while True:
+                print vbati.run()
