@@ -12,3 +12,8 @@ class VbatTest(unittest.TestCase):
             raise ValueError('Something went wrong!')
         with self.assertRaises(ValueError):
             do_something_wrong(1, 2, 3)
+
+    def test_main_class(self):
+        #import Vbat?
+        vbati = Vbat("nn")
+        vbati.image_test("test.jpeg") == [[5, 1, ".", 2, 8, 0, 7, 3, 1], [6, ".", 4, 6, 5, 4, 9, 1], ["X", 5, 4]]
