@@ -16,7 +16,7 @@ class VbatTest(unittest.TestCase):
             do_something_wrong(1, 2, 3)
 
     def test_main_class(self):
-        vbati = Vbat("nn")
+        vbati = Vbat("zz")
         self.assertEquals(
             vbati.image_test("test.jpeg"),
             [
