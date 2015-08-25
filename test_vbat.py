@@ -1,5 +1,7 @@
 import unittest
 
+from vbat import Vbat
+
 class VbatTest(unittest.TestCase):
     def test_true(self):
         # Test that true is true!
@@ -14,6 +16,11 @@ class VbatTest(unittest.TestCase):
             do_something_wrong(1, 2, 3)
 
     def test_main_class(self):
-        #import Vbat?
         vbati = Vbat("nn")
-        vbati.image_test("test.jpeg") == [[5, 1, ".", 2, 8, 0, 7, 3, 1], [6, ".", 4, 6, 5, 4, 9, 1], ["X", 5, 4]]
+        self.assertEquals(
+            vbati.image_test("test.jpeg"),
+            [
+                [5, 1, ".", 2, 8, 0, 7, 3, 1],
+                [6, ".", 4, 6, 5, 4, 9, 1],
+                ["X", 5, 4],
+            ])
