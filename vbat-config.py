@@ -12,10 +12,14 @@ import datetime
 import ImageTk
 import math
 import os
+import os.path
 import shutil
+from lib.CamLib import *
+from lib.file_handler import loadconfig
 
 
-class main(object):
+
+class Main(object):
     def __init__(self):
         self.__master = Tk()
         self.__master.title("vbat-config")
@@ -48,10 +52,20 @@ class main(object):
         self.__button2.grid(row=2, column=0, sticky=W + E)
         self.__frame.grid(row=3, column=1, sticky=W)
 
-        self.__button3 = Button(self.__frame2, text="New Field", command=self.__set_field)
-        self.__button3.grid(row=0, column=0, sticky=W + E)
-        self.__button4 = Button(self.__frame2, text="(Latitude) -->", command=self.__change)
-        self.__button4.grid(row=1, column=0, sticky=W + E)
+        self.__check_img = PhotoImage(file="files/Green_check.svg.png")
+        self.__cross_img = PhotoImage(file="files/13px-Red_x.svg.png")
+
+        self.__button_lat = Button(self.__frame2, image=self.__cross_img, text="Latitude", compound="left",
+                                   state=DISABLED, command=lambda: self.__set_field("lat"))
+        self.__button_lat.grid(row=0, column=0, sticky=W + E)
+        self.__button_lon = Button(self.__frame2, image=self.__cross_img, text="Longitude", compound="left",
+                                   state=DISABLED, command=lambda: self.__set_field("lon"))
+        self.__button_lon.grid(row=1, column=0, sticky=W + E)
+        self.__button_height = Button(self.__frame2, image=self.__cross_img, text="Height", compound="left",
+                                      state=DISABLED, command=lambda: self.__set_field("height"))
+        self.__button_height.grid(row=2, column=0, sticky=W + E)
+        self.__button_cancel = Button(self.__frame2, text="Cancel", state=DISABLED, command=self.__show)
+        self.__button_cancel.grid(row=3, column=0, sticky=W + E)
         self.__frame2.grid(row=3, column=2)
 
         self.__mouse_binding = ""
@@ -65,7 +79,7 @@ class main(object):
         self.__rectangle = ""
         self.__fields = []
         self.__characterfield = ["", "", ""]
-        self.__selected = "lat"  # "lat" "lon" "hight"
+        self.__selected = "lat"  # "lat" "lon" "height"
         self.__mainimage = ""
 
         self.__w.bind("<Button-1>", self.__mouse_click)
@@ -92,11 +106,10 @@ class main(object):
         filemenu.add_command(label="Exit", command=self.__master.quit)
         menubar.add_cascade(label="File", menu=filemenu)
         self.__master.bind_all("<Control-v>", self.__grab_image)
-        # settingsmenu
-        settingsmenu = Menu(menubar, tearoff=0)
-        settingsmenu.add_command(label="Set Values", command=self.__set_values)
-        settingsmenu.add_command(label="Manage Loaded Images", command=self.__manage_loaded_images)
-        menubar.add_cascade(label="Settings", menu=settingsmenu)
+        # Do_menue
+        do_menue = Menu(menubar, tearoff=0)
+        do_menue.add_command(label="Assign Characters", command=lambda:Assign_Characters(self.__master, self.__sessionname))
+        menubar.add_cascade(label="Do", menu=do_menue)
         # helpmenu
         helpmenu = Menu(menubar, tearoff=0)
         helpmenu.add_command(label="About", command=self.__about)
@@ -134,16 +147,16 @@ class main(object):
 
     def __extract_number(self):
         self.__save_file()
-        extract_number(self.__characterfield, self.__listdir_fullpath("saves/" + self.__sessionname + "/images/"),
+        Extract_Number(self.__characterfield, self.__listdir_fullpath("saves/" + self.__sessionname + "/images/"),
                        self.__sessionname)
         self.__listbox.delete(0, END)
         self.__listbox.insert(END, "Sort the characters,")
         self.__listbox.insert(END, "then start \"create template\"")
 
     def __create_template(self):
-        create_template(self.__sessionname)
+        Create_Template(self.__sessionname)
         self.__listbox.delete(0, END)
-        self.__listbox.insert(END, "Select height")
+        self.__listbox.insert(END, "Select Height")
 
     def __set_session_name(self):
         while self.__sessionname == "":
@@ -154,10 +167,10 @@ class main(object):
                     self.__sessionname = ""
         os.makedirs("saves/" + self.__sessionname)
         os.makedirs("saves/" + self.__sessionname + "/images")
-        for i in range(10):
-            os.makedirs("saves/" + self.__sessionname + "/temp/" + "/" + str(i))
-        os.makedirs("saves/" + self.__sessionname + "/temp/" + "dot")
-        os.makedirs("saves/" + self.__sessionname + "/temp/" + "minus")
+        #for i in range(10):
+        #    os.makedirs("saves/" + self.__sessionname + "/temp/" + "/" + str(i))
+        #os.makedirs("saves/" + self.__sessionname + "/temp/" + "dot")
+        #os.makedirs("saves/" + self.__sessionname + "/temp/" + "minus")
 
     def __open_image_file(self):
         if self.__sessionname == "":
@@ -186,10 +199,10 @@ class main(object):
             self.__set_session_name()
         pygame.init()
         pygame.camera.init()
-        data = file_handler()
+        data = File_Handler()
         data.set_filename(self.__filename)
         cam = pygame.camera.Camera(data.get("video"), (int(data.get("camx")), int(data.get("camy"))))
-        if True:
+        try:
             cam.start()
             for i in range(3):
                 image = cam.get_image()
@@ -197,8 +210,9 @@ class main(object):
             path = str(datetime.datetime.today()).replace(":", "-").replace(".", "-") + ".jpeg"
             pygame.image.save(image, "saves/" + self.__sessionname + "/images/" + path)
             self.__mainimage = "saves/" + self.__sessionname + "/images/" + path
-            # except:
-            # tkMessageBox.showinfo("Something Went Wrong", "Check the video device, or try to change the video resolution.")
+        except:
+            tkMessageBox.showinfo("Something Went Wrong",
+                                  "Check the video device, or try to change the video resolution.")
         self.__show()
 
     def __listdir_fullpath(self, d):
@@ -218,13 +232,39 @@ class main(object):
         self.__w.config(width=iwidth, height=iheight)
         self.__photo = ImageTk.PhotoImage(image)
         self.__x = self.__w.create_image(0, 0, anchor=NW, image=self.__photo)
-        self.__button3.config(text="New Field", command=self.__set_field)
-        if self.__selected == "lat":
-            self.__button4.config(text="(Latitude) -->", command=self.__change)
-        if self.__selected == "lon":
-            self.__button4.config(text="(Longitude)-->", command=self.__change)
-        if self.__selected == "high":
-            self.__button4.config(text="(Hight)    -->", command=self.__change)
+
+        # Button stuff
+        # Button Latitude
+        self.__button_lat.config(text="Latitude", command=lambda: self.__set_field("lat"))
+        if self.__characterfield[0] != "":
+            self.__button_lat.config(image=self.__check_img)
+        else:
+            self.__button_lat.config(image=self.__cross_img)
+        # Button Longitude
+        self.__button_lon.config(text="Longitude", command=lambda: self.__set_field("lon"))
+        if self.__characterfield[1] != "":
+            self.__button_lon.config(image=self.__check_img)
+        else:
+            self.__button_lon.config(image=self.__cross_img)
+        # Button Height
+        self.__button_height.config(text="Height", command=lambda: self.__set_field("height"))
+        if self.__characterfield[2] != "":
+            self.__button_height.config(image=self.__check_img)
+        else:
+            self.__button_height.config(image=self.__cross_img)
+        # Button all
+        if self.__sessionname != "":
+            self.__button_lat["state"] = "normal"
+            self.__button_lon["state"] = "normal"
+            if os.path.exists("saves/" + self.__sessionname + "/" + self.__sessionname + ".templates"):
+                self.__button_height["state"] = "normal"
+            else:
+                self.__button_height["state"] = "disabled"
+        else:
+            self.__button_lat["state"] = "disabled"
+            self.__button_lon["state"] = "disabled"
+            self.__button_height["state"] = "disabled"
+
         self.__new_field_name = ""
         self.__new_field_x1 = ""
         self.__new_field_y1 = ""
@@ -241,7 +281,6 @@ class main(object):
         self.__characterfield = ["", "", ""]
         self.__imageindex = -1
         self.__listbox.delete(0, END)
-        image = Image.open("files/background")
         self.__mainimage = ""
         self.__show()
 
@@ -251,14 +290,12 @@ class main(object):
             f.write(i + "\n")
         f.close()
 
-    def __set_values(self):
-        values = settings(self.__master)
-
     def __manage_loaded_images(self):
         pass
 
-    def __set_field(self):
+    def __set_field(self, source):
         if self.__sessionname != "":
+            self.__button_cancel["state"] = "disabled"
             self.__show()
             self.__new_field_name = ""
             self.__new_field_x1 = ""
@@ -266,32 +303,34 @@ class main(object):
             self.__new_field_x2 = ""
             self.__new_field_y2 = ""
             self.__mouse_binding = self.__w.bind("<B1-Motion>", self.__mouse_move)
-            self.__button3.config(text="Test", command=self.__test_new_field)
-            self.__button4.config(text="Cancel", command=self.__show)
+            if source == "lat":
+                self.__button_lat.config(text="Test", command=lambda: self.__test_new_field(source))
+            elif source == "lon":
+                self.__button_lon.config(text="Test", command=lambda: self.__test_new_field(source))
+            elif source == "height":
+                self.__button_height.config(text="Test", command=lambda: self.__test_new_field(source))
         else:
             tkMessageBox.showinfo("Something Went Wrong", "You Have No Images Loaded")
 
     def __mouse_click(self, event):
-        if self.__button3.config('text')[-1] == "Test":
-            self.__new_field_x1 = event.x
-            self.__new_field_y1 = event.y
-            self.__new_field_x2 = event.x
-            self.__new_field_y2 = event.y
-            if self.__rectangle == "":
-                self.__rectangle = self.__w.create_rectangle(self.__new_field_x1, self.__new_field_y1,
-                                                             self.__new_field_x1, self.__new_field_y1, outline='red')
-            else:
-                self.__w.coords(self.__rectangle, self.__new_field_x1, self.__new_field_y1, event.x, event.y)
+        self.__new_field_x1 = event.x
+        self.__new_field_y1 = event.y
+        self.__new_field_x2 = event.x
+        self.__new_field_y2 = event.y
+        if self.__rectangle == "":
+            self.__rectangle = self.__w.create_rectangle(self.__new_field_x1, self.__new_field_y1,
+                                                         self.__new_field_x1, self.__new_field_y1, outline='red')
+        else:
+            self.__w.coords(self.__rectangle, self.__new_field_x1, self.__new_field_y1, event.x, event.y)
 
     def __mouse_move(self, event):
-        if self.__button3.config('text')[-1] == "Test":
-            if (self.__new_field_x1 != ""):
-                if self.__rectangle != "":
-                    self.__new_field_x2 = event.x
-                    self.__new_field_y2 = event.y
-                    self.__w.coords(self.__rectangle, self.__new_field_x1, self.__new_field_y1, event.x, event.y)
+        if self.__new_field_x1 != "":
+            if self.__rectangle != "":
+                self.__new_field_x2 = event.x
+                self.__new_field_y2 = event.y
+                self.__w.coords(self.__rectangle, self.__new_field_x1, self.__new_field_y1, event.x, event.y)
 
-    def __test_new_field(self):
+    def __test_new_field(self, source):
         if (self.__new_field_x2 == "") or (self.__new_field_x2 == self.__new_field_x1) or (
                     self.__new_field_y2 == self.__new_field_y1):
             tkMessageBox.showinfo("Something Went Wrong", "You Have To Select A Field First")
@@ -307,24 +346,29 @@ class main(object):
             self.__w.delete(self.__mouse_binding)
             self.__w.delete(self.__rectangle)
             self.__rectangle = ""
-            if self.__selected != "high":
-                data = field_analyser(self.__listdir_fullpath("saves/" + self.__sessionname + "/images/"),
+            if source != "height":
+                # Analyses field from all loaded images
+                data = Field_Analyser(self.__listdir_fullpath("saves/" + self.__sessionname + "/images/"),
                                       self.__new_field_x1, self.__new_field_y1, self.__new_field_x2,
                                       self.__new_field_y2)
             else:
-                data = field_analyser([self.__mainimage], self.__new_field_x1, self.__new_field_y1, self.__new_field_x2,
+                # Analyses filed only from current image
+                data = Field_Analyser([self.__mainimage], self.__new_field_x1, self.__new_field_y1, self.__new_field_x2,
                                       self.__new_field_y2)
             self.__fields = data.analyse()
-            # mache felder kleiner
+            # make field smaller
             for i in range(len(self.__fields)):
                 self.__fields[i][0] += 1
                 self.__fields[i][1] += 2
                 self.__fields[i][3] += -1
-            #
-            if self.__selected != "high":
-                self.__button3.config(text="Save New Field", command=self.__save_field)
-            else:
-                self.__button3.config(text="Extract Height Field", command=self.__extract_height_field)
+            # Change Buttons
+            if source == "lat":
+                self.__button_lat.config(text="Save", command=lambda: self.__save_field(source))
+            elif source == "lon":
+                self.__button_lon.config(text="Save", command=lambda: self.__save_field(source))
+            elif source == "height":
+                self.__button_height.config(text="Extract Height Field", command=lambda: self.__extract_height_field)
+
             for i in range(len(self.__fields)):
                 self.__w.create_rectangle(self.__fields[i][0], self.__fields[i][1], self.__fields[i][2] - 1,
                                           self.__fields[i][3] - 1, outline='blue')
@@ -342,7 +386,6 @@ class main(object):
         x2 = 0
         y2 = 0
         width = 0
-        height = 0
         heightc = tkSimpleDialog.askstring("What Character Is Selected?", "0-9")
         counter = 0
         y = -1
@@ -371,7 +414,6 @@ class main(object):
         self.__fields[0][1] = int(self.__fields[0][1]) - (int(y1) - 1)
         self.__fields[0][2] = int(self.__fields[0][2]) + (int(width - x2) - 2)
         self.__fields[0][3] = int(self.__fields[0][3]) + (int(height - y2) - 1)
-        print x1, y1, width - x2 - 1, height - y2
         # 2 linke partner einfuegen
         temp = self.__characterfield[0].split(";")
         temp2 = []
@@ -384,9 +426,9 @@ class main(object):
                  self.__fields[0][3]])
         self.__fields.reverse()
 
-        self.__button3.config(text="Save New Field", command=self.__save_field)
+        self.__button_height.config(text="Save", command=lambda: self.__save_field("height"))
 
-    def __save_field(self):
+    def __save_field(self, source):
         # self.__fields.insert(0, self.__new_field_name)
         text2save = str(self.__fields)
         text2save = text2save.replace("['", "")
@@ -396,33 +438,25 @@ class main(object):
         text2save = text2save.replace("',", "")
         text2save = text2save.replace(" ", "")
         text2save = text2save.replace(";;", "")
-        if self.__selected == "lat":
+
+        if source == "lat":
             self.__characterfield[0] = text2save
-        elif self.__selected == "lon":
+        elif source == "lon":
             self.__characterfield[1] = text2save
-        elif self.__selected == "high":
+        elif source == "height":
             self.__characterfield[2] = text2save
+
         if (self.__characterfield[0] != "") and (self.__characterfield[1] != ""):
             self.__listbox.delete(0, END)
             self.__listbox.insert(END, "Start \"extract number\"")
+        self.__button_cancel["state"] = "normal"
         self.__show()
-
-    def __change(self):
-        if self.__selected == "lat":
-            self.__button4.config(text="(Longitude)-->", command=self.__change)
-            self.__selected = "lon"
-        elif self.__selected == "lon":
-            self.__button4.config(text="(Hight)    -->", command=self.__change)
-            self.__selected = "high"
-        elif self.__selected == "high":
-            self.__button4.config(text="(Latitude) -->", command=self.__change)
-            self.__selected = "lat"
 
     def __about(self):
         pass
 
 
-class field_analyser():
+class Field_Analyser:
     def __init__(self, files, x1, y1, x2, y2):
         self.__files = files
         self.__x1 = x1
@@ -440,7 +474,8 @@ class field_analyser():
         easy_field = []
         for i in range(self.__x2 - self.__x1):
             easy_field.append(["", ""])
-        # Fuellt eine Liste von (x2-x1) mit den Werten fuer das oberste und das unterste y, wenn auf der Strecke ein weisser Pixel ist
+        # Fuellt eine Liste von (x2-x1) mit den Werten fuer das oberste und das unterste y,
+        # wenn auf der Strecke ein weisser Pixel ist
         for i in range(len(self.__files)):
             image2 = pygame.image.load(self.__files[i])
             for x in range(self.__x2 - self.__x1):
@@ -453,7 +488,6 @@ class field_analyser():
         # Erkennt die einzelnen Felder und erstellt eine Liste mit x1,y1,x2,y2
         x1 = 0
         y1 = 0
-        x2 = 0
         y2 = 0
         fields = []
         for i in range(len(easy_field) - 1):
@@ -472,7 +506,8 @@ class field_analyser():
                 x2 = self.__x1 + i
                 fields.append([x1, self.__y1 + y1, x2, self.__y1 + y2])
                 x1 = 0
-                # zu diesem punkt enthalt "fields" eine Liste mit allen feldern vom ersten weisen pixel x1,y1 bis zum letzten x2,y2
+                # zu diesem punkt enthalt "fields" eine Liste mit allen
+                # feldern vom ersten weisen pixel x1,y1 bis zum letzten x2,y2
         # fuege breite, abstand(L) und abstand (R) hinzu
         for i in range(len(fields)):
             fields[i].append(fields[i][2] - fields[i][0])  # breite anhaengen
@@ -535,7 +570,7 @@ class field_analyser():
         return back
 
 
-class file_handler():  # reparieren
+class File_Handler:  # reparieren
     def __init__(self):
         self.__filename = "settings"
 
@@ -554,10 +589,9 @@ class file_handler():  # reparieren
         self.__filename = filename
 
 
-class create_template():
+class Create_Template:
     def __init__(self, name):
         sign = []
-        template = []
 
         def weisstest(farbe):
             # weiss=441
@@ -576,7 +610,7 @@ class create_template():
 
         picture = os.listdir(sign[0])
         image = pygame.image.load(sign[0] + "/" + picture[0])
-        imageSizeX, imageSizeY = image.get_rect().size
+        image_size_x, image_size_y = image.get_rect().size
 
         f = open("saves/" + name + "/" + name + ".templates", 'w')
 
@@ -585,20 +619,20 @@ class create_template():
             if "template.jpg" in picture:
                 picture.remove("template.jpg")
             template = []  # create matrix
-            for j in range(imageSizeY):
+            for j in range(image_size_y):
                 template.append([])
             for j in range(len(template)):
-                for k in range(imageSizeX):
+                for k in range(image_size_x):
                     template[j].append(0)
 
             for j in range(len(picture)):
                 image = pygame.image.load(sign[i] + "/" + picture[j])
-                for k in range(imageSizeY):
-                    for l in range(imageSizeX):
+                for k in range(image_size_y):
+                    for l in range(image_size_x):
                         if weisstest(image.get_at((l, k))):
                             template[k][l] += 1
-            for k in range(imageSizeY):
-                for l in range(imageSizeX):
+            for k in range(image_size_y):
+                for l in range(image_size_x):
                     if template[k][l] >= len(picture) / 10:
                         image.set_at((l, k), (255, 255, 255))
                     else:
@@ -621,7 +655,7 @@ class create_template():
         f.close()
 
 
-class extract_number():
+class Extract_Number:
     def __init__(self, field, images, sessionname):
         pygame.init()
 
@@ -647,53 +681,102 @@ class extract_number():
                         pygame.image.save(cropped, "saves/" + name + "/temp/" + str(namecounter) + ".jpeg")
 
 
-class settings(Frame):
-    def __init__(self, parent):
+class Assign_Characters(Frame):
+    def __init__(self, parent, name):
+
+        self.__name = name
+
         Frame.__init__(self, parent)
         self.root = Toplevel(parent)
 
-        self.btn_add = Button(self.root,
-                              text="Add",
-                              command=self.add).grid(row=1, column=1, sticky=W)
+        #first row
+        self.button_pixel_range = Button(self.root,
+                              text="Find",
+                              command=self.find).grid(row=0, column=4, columnspan=2, sticky=W)
+        self.entry_pixel_range = Entry(self.root,
+                               width=10,
+                               bg="white").grid(row=0, column=2, columnspan=2, sticky=W)
+        self.label_pixel_range = Label(self.root,
+                              text="Pixel-range:").grid(row=0, column=0, columnspan=2)
 
-        self.btn_delete = Button(self.root,
-                                 text="Delete",
-                                 command=self.delete).grid(row=1, column=2, sticky=W)
+        image = Image.open("files/black.jpeg")
+        photo = ImageTk.PhotoImage(image)
 
-        self.btn_closechild = Button(self.root,
-                                     text="Close",
-                                     command=self.close).grid(row=1, column=4, sticky=E)
+        #pictures column 1
+        self.__character = []
+        for image_column in range(15):
+            self.__character.append([])
+            for image_row in range(5):
+                self.__one_image = Label(self.root, image=photo)
+                self.__one_image.grid(row=image_row+2, column=image_column)
+                self.__character[image_column].append(self.__one_image)
 
-        self.lbl_name = Label(self.root,
-                              text="Tea:").grid(row=2, column=1, sticky=E)
+        self.__entry_list = []
+        for i in range(15):
 
-        self.entry_tea = Entry(self.root,
-                               width=30,
-                               bg="white").grid(row=2, column=2, sticky=W)
+            self.__entry_character = Entry(self.root,
+                               width=5,
+                               bg="white").grid(row=7, column=i, sticky=W)
+            self.__entry_list.append(self.__entry_character)
 
-        self.lbl_time = Label(self.root,
-                              text="Time:").grid(row=2, column=3, sticky=E)
+        self.button_save = Button(self.root,
+                              text="Save",
+                              command=self.__save).grid(row=8, column=0, columnspan=6, sticky=W)
 
-        self.entry_time = Entry(self.root,
-                                width=10,
-                                bg="white").grid(row=2, column=4, sticky=W)
 
-        self.tealist = Listbox(self.root,
-                               bg="white").grid(row=3, column=1, columnspan=5, sticky=W + E + N + S)
+
+
 
         self.root.focus_set()
         self.root.grab_set()
         self.root.wait_window()
 
-    def add(self):
+
+
+    def pxl_range(self):
         pass
 
-    def delete(self):
+    def __save(self):
         pass
+
+    def find(self):
+        path = "saves/" + self.__name + "/temp/"
+        character_images = (file for file in os.listdir(path)
+         if os.path.isfile(os.path.join(path, file)))
+
+        pixel_similarity = 1
+        sorted_images = []
+        white_test = White(float(loadconfig("testwhite")))
+        image = pygame.image.load(path+character_images.next())
+        width, height = image.get_rect().size
+
+        for image_name in character_images:
+            full_path = path+image_name
+            white_counter = 0
+            found = False
+            image = pygame.image.load(full_path)
+            for x in range(width):
+                for y in range(height):
+                    if white_test.test(image.get_at((x,y))):
+                        white_counter += 1
+            for case in range(len(sorted_images)):
+                if sorted_images[case][0] <= white_counter+pixel_similarity and sorted_images[case][0] >= white_counter-pixel_similarity:
+                    sorted_images[case][1].append(full_path)
+                    found = True
+            if not found:
+                sorted_images.append([white_counter, [full_path]])
+
+        for image_column in range(len(sorted_images)):
+            for image_row in range(len(sorted_images[image_column][1])):
+                if image_row<5:
+                    image = Image.open(sorted_images[image_column][1][image_row])
+                    photo = ImageTk.PhotoImage(image)
+                    self.__character[image_column][image_row].config(image=photo)
+                    self.__character[image_column][image_row].image = photo
 
     def close(self):
         self.root.destroy()
 
 
 if __name__ == "__main__":
-    main()
+    Main()
