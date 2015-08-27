@@ -3,6 +3,7 @@
 Welcome to the VBAT (video based antenna tracker) project.
 
 How it works:
+
 vbat-config:
 - Start vbat-config.
 - Import test images per file or webcam. These test images have to be taken with black camera input, so that only the OSD is visible.
