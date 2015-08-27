@@ -18,7 +18,6 @@ from lib.CamLib import *
 from lib.file_handler import loadconfig
 
 
-
 class Main(object):
     def __init__(self):
         self.__master = Tk()
@@ -108,7 +107,8 @@ class Main(object):
         self.__master.bind_all("<Control-v>", self.__grab_image)
         # Do_menue
         do_menue = Menu(menubar, tearoff=0)
-        do_menue.add_command(label="Assign Characters", command=lambda:Assign_Characters(self.__master, self.__sessionname))
+        do_menue.add_command(label="Assign Characters",
+                             command=self.__assign_character)
         menubar.add_cascade(label="Do", menu=do_menue)
         # helpmenu
         helpmenu = Menu(menubar, tearoff=0)
@@ -145,6 +145,13 @@ class Main(object):
         self.__mainimage = new
         self.__show()
 
+    def __assign_character(self):
+        self.__extract_number()
+        if Assign_Characters(self.__master, self.__sessionname):
+            if os.path.exists("saves/" + self.__sessionname + "/temp/1"):
+                self.__create_template()
+                self.__show()
+
     def __extract_number(self):
         self.__save_file()
         Extract_Number(self.__characterfield, self.__listdir_fullpath("saves/" + self.__sessionname + "/images/"),
@@ -167,10 +174,10 @@ class Main(object):
                     self.__sessionname = ""
         os.makedirs("saves/" + self.__sessionname)
         os.makedirs("saves/" + self.__sessionname + "/images")
-        #for i in range(10):
+        # for i in range(10):
         #    os.makedirs("saves/" + self.__sessionname + "/temp/" + "/" + str(i))
-        #os.makedirs("saves/" + self.__sessionname + "/temp/" + "dot")
-        #os.makedirs("saves/" + self.__sessionname + "/temp/" + "minus")
+        # os.makedirs("saves/" + self.__sessionname + "/temp/" + "dot")
+        # os.makedirs("saves/" + self.__sessionname + "/temp/" + "minus")
 
     def __open_image_file(self):
         if self.__sessionname == "":
@@ -295,7 +302,7 @@ class Main(object):
 
     def __set_field(self, source):
         if self.__sessionname != "":
-            self.__button_cancel["state"] = "disabled"
+            self.__button_cancel["state"] = "normal"
             self.__show()
             self.__new_field_name = ""
             self.__new_field_x1 = ""
@@ -367,7 +374,7 @@ class Main(object):
             elif source == "lon":
                 self.__button_lon.config(text="Save", command=lambda: self.__save_field(source))
             elif source == "height":
-                self.__button_height.config(text="Extract Height Field", command=lambda: self.__extract_height_field)
+                self.__button_height.config(text="Extract Height Field", command=self.__extract_height_field)
 
             for i in range(len(self.__fields)):
                 self.__w.create_rectangle(self.__fields[i][0], self.__fields[i][1], self.__fields[i][2] - 1,
@@ -377,7 +384,6 @@ class Main(object):
         self.__listbox.delete(0, END)
 
     def __extract_height_field(self):
-        pass
         #
         # create new field, depending on what field[-1] is
         #
@@ -449,7 +455,8 @@ class Main(object):
         if (self.__characterfield[0] != "") and (self.__characterfield[1] != ""):
             self.__listbox.delete(0, END)
             self.__listbox.insert(END, "Start \"extract number\"")
-        self.__button_cancel["state"] = "normal"
+        self.__save_file()
+        self.__button_cancel["state"] = "disabled"
         self.__show()
 
     def __about(self):
@@ -662,6 +669,8 @@ class Extract_Number:
         name = sessionname
         fields = field
         namecounter = 0
+        if not os.path.exists("saves/" + name + "/temp"):
+            os.mkdir("saves/" + name + "/temp")
 
         for k in range(len(images)):
             image = pygame.image.load(images[k])
@@ -689,87 +698,118 @@ class Assign_Characters(Frame):
         Frame.__init__(self, parent)
         self.root = Toplevel(parent)
 
-        #first row
-        self.button_pixel_range = Button(self.root,
-                              text="Find",
-                              command=self.find).grid(row=0, column=4, columnspan=2, sticky=W)
-        self.entry_pixel_range = Entry(self.root,
-                               width=10,
-                               bg="white").grid(row=0, column=2, columnspan=2, sticky=W)
+        # first row
         self.label_pixel_range = Label(self.root,
-                              text="Pixel-range:").grid(row=0, column=0, columnspan=2)
+                                       text="Pixel-range:").grid(row=0, column=0, columnspan=3)
+
+        self.entry_pixel_range = Entry(self.root, width=10, bg="white")
+        self.entry_pixel_range.grid(row=0, column=3, columnspan=3, sticky=W)
+        self.entry_pixel_range.insert(0, "2")
+
+        self.button_pixel_range = Button(self.root,
+                                         text="Find",
+                                         command=lambda: self.find(int(self.entry_pixel_range.get()))).grid(row=0, column=6, columnspan=3, sticky=W)
 
         image = Image.open("files/black.jpeg")
         photo = ImageTk.PhotoImage(image)
 
-        #pictures column 1
+        # pictures column 1
         self.__character = []
-        for image_column in range(15):
+        for image_column in range(20):
             self.__character.append([])
             for image_row in range(5):
                 self.__one_image = Label(self.root, image=photo)
-                self.__one_image.grid(row=image_row+2, column=image_column)
+                self.__one_image.grid(row=image_row + 2, column=image_column)
                 self.__character[image_column].append(self.__one_image)
 
         self.__entry_list = []
-        for i in range(15):
-
-            self.__entry_character = Entry(self.root,
-                               width=5,
-                               bg="white").grid(row=7, column=i, sticky=W)
+        for i in range(20):
+            self.__entry_character = Entry(self.root, width=3, bg="white")
+            self.__entry_character.grid(row=7, column=i, sticky=W)
             self.__entry_list.append(self.__entry_character)
 
-        self.button_save = Button(self.root,
-                              text="Save",
-                              command=self.__save).grid(row=8, column=0, columnspan=6, sticky=W)
-
-
-
-
+        self.button_save = Button(self.root, text="Save", command=self.__save)
+        self.button_save.grid(row=8, column=0, columnspan=6, sticky=W)
 
         self.root.focus_set()
         self.root.grab_set()
         self.root.wait_window()
 
-
-
     def pxl_range(self):
         pass
 
     def __save(self):
-        pass
+        for case in range(len(self.__sorted_images)):
+            if case<20:
+                character = self.__entry_list[case].get()
+                if character == ".":
+                    character = "dot"
+                elif character == "-":
+                    character = "minus"
+                if character != "":
+                    if not os.path.exists("saves/" + self.__name + "/temp/" + character):
+                            os.mkdir("saves/" + self.__name + "/temp/" + character)
+                    for i in range(len(self.__sorted_images[case][1])):
+                        if i <5:
+                            shutil.copy(self.__sorted_images[case][1][i], "saves/" + self.__name + "/temp/" + character + "/")
+        self.close()
 
-    def find(self):
+
+
+
+    def find(self, pixel_similarity):
         path = "saves/" + self.__name + "/temp/"
         character_images = (file for file in os.listdir(path)
-         if os.path.isfile(os.path.join(path, file)))
+                            if os.path.isfile(os.path.join(path, file)))
 
-        pixel_similarity = 1
-        sorted_images = []
+        self.__sorted_images = []
         white_test = White(float(loadconfig("testwhite")))
-        image = pygame.image.load(path+character_images.next())
+        image = pygame.image.load(path + character_images.next())
         width, height = image.get_rect().size
 
+        for column in range(20):
+            for row in range(5):
+                image = Image.open("files/black.jpeg")
+                photo = ImageTk.PhotoImage(image)
+                self.__character[column][row].config(image=photo)
+                self.__character[column][row].image = photo
+
         for image_name in character_images:
-            full_path = path+image_name
-            white_counter = 0
+            full_path = path + image_name
+            white_counter = [0, 0, 0, 0]
             found = False
             image = pygame.image.load(full_path)
             for x in range(width):
                 for y in range(height):
-                    if white_test.test(image.get_at((x,y))):
-                        white_counter += 1
-            for case in range(len(sorted_images)):
-                if sorted_images[case][0] <= white_counter+pixel_similarity and sorted_images[case][0] >= white_counter-pixel_similarity:
-                    sorted_images[case][1].append(full_path)
+                    if white_test.test(image.get_at((x, y))):
+                        if y < int(height / 4):
+                            white_counter[0] += 1
+                        elif y < int(height / 4 * 2):
+                            white_counter[1] += 1
+                        elif y < int(height / 4 * 3):
+                            white_counter[2] += 1
+                        else:
+                            white_counter[3] += 1
+
+            for case in range(len(self.__sorted_images)):
+                #print sorted_images[case][0],
+                if self.__sorted_images[case][0][0] <= white_counter[0] + pixel_similarity and \
+                   self.__sorted_images[case][0][0] >= white_counter[0] - pixel_similarity and \
+                   self.__sorted_images[case][0][1] <= white_counter[1] + pixel_similarity and \
+                   self.__sorted_images[case][0][1] >= white_counter[1] - pixel_similarity and \
+                   self.__sorted_images[case][0][2] <= white_counter[2] + pixel_similarity and \
+                   self.__sorted_images[case][0][2] >= white_counter[2] - pixel_similarity and \
+                   self.__sorted_images[case][0][3] <= white_counter[3] + pixel_similarity and \
+                   self.__sorted_images[case][0][3] >= white_counter[3] - pixel_similarity:
+                    self.__sorted_images[case][1].append(full_path)
                     found = True
             if not found:
-                sorted_images.append([white_counter, [full_path]])
+                self.__sorted_images.append([white_counter, [full_path]])
 
-        for image_column in range(len(sorted_images)):
-            for image_row in range(len(sorted_images[image_column][1])):
-                if image_row<5:
-                    image = Image.open(sorted_images[image_column][1][image_row])
+        for image_column in range(len(self.__sorted_images)):
+            for image_row in range(len(self.__sorted_images[image_column][1])):
+                if image_row < 5 and image_column < 20:
+                    image = Image.open(self.__sorted_images[image_column][1][image_row])
                     photo = ImageTk.PhotoImage(image)
                     self.__character[image_column][image_row].config(image=photo)
                     self.__character[image_column][image_row].image = photo
