@@ -1,6 +1,6 @@
 import unittest
 
-from vbat import Vbat
+from . import Vbat
 
 class VbatTest(unittest.TestCase):
     def test_true(self):

@@ -6,8 +6,8 @@ import os
 import copy
 from datetime import datetime
 
-from vbat.CamLib import CamLib
-from vbat.FileHandler import loadconfig
+from .CamLib import CamLib
+from .FileHandler import loadconfig
 
 class Vbat(object):
     def __init__(self, name):
