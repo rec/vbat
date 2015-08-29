@@ -23,12 +23,11 @@ class CamLib(object):
     def get_at(self, px, py):
         return self.__image.get_at((px, py))
 
+
 class White(object):
     def __init__(self, value):
         self.__value = value
 
     def test(self, color):
-            if color[0] * .3 + color[1] * 0.6 + color[2] * 0.1 < self.__value:
-                return False
-            else:
-                return True
+        level = color[0] * .3 + color[1] * 0.6 + color[2] * 0.1
+        return not level >= self.__value_

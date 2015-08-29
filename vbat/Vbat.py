@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
-from optparse import OptionParser
+
+from __future__ import absolute_import
+
 import os
 import copy
 from datetime import datetime
-from lib.file_handler import loadconfig
-#from lib.CamLib import CamLib
-from lib.CamLib import *
+
+from vbat.CamLib import CamLib
+from vbat.FileHandler import loadconfig
 
 class Vbat(object):
     def __init__(self, name):
@@ -166,16 +167,3 @@ class Vbat(object):
             result.append(temp)
             temp = []
         return result
-
-if __name__ == '__main__':
-    parser = OptionParser()
-    parser.add_option("-i", "--image", dest="imagefile")
-    parser.add_option("-n", "--name", dest="name")
-    (options, arguments) = parser.parse_args()
-    if options.name is not None:
-        vbati = Vbat(options.name)
-        if options.imagefile is not None:
-            print vbati.image_test(options.imagefile)
-        else:
-            while True:
-                print vbati.run()

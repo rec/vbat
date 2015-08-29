@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 
 from Tkinter import *
 from PIL import ImageTk
@@ -145,6 +144,8 @@ class Com_Sent(object):
     def this(self, lat, lon, height):
         print lat, lon, height
 
-root = Tk()
-app = SimpleApp(root, 'Up_Arrow_Icon.png')
-root.mainloop()
+
+def main():
+    root = Tk()
+    app = SimpleApp(root, 'images/Up_Arrow_Icon.png')
+    root.mainloop()

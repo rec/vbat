@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf8 -*-
 from Tkinter import *
+# TODO: import * is nearly always a bad idea!
 from PIL import Image
 from tkFileDialog import askdirectory
 from tkFileDialog import askopenfilename
@@ -14,8 +13,8 @@ import math
 import os
 import os.path
 import shutil
-from lib.CamLib import *
-from lib.file_handler import loadconfig
+from .CamLib import *
+from .FileHandler import loadconfig
 import ntpath
 
 class Main(object):
@@ -856,7 +855,3 @@ class Assign_Characters(Frame):
 
     def close(self):
         self.root.destroy()
-
-
-if __name__ == "__main__":
-    Main()
