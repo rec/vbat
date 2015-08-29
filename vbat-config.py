@@ -16,7 +16,7 @@ import os.path
 import shutil
 from lib.CamLib import *
 from lib.file_handler import loadconfig
-
+import ntpath
 
 class Main(object):
     def __init__(self):
@@ -62,9 +62,17 @@ class Main(object):
         self.__button_lon.grid(row=1, column=0, sticky=W + E)
         self.__button_height = Button(self.__frame2, image=self.__cross_img, text="Height", compound="left",
                                       state=DISABLED, command=lambda: self.__set_field("height"))
-        self.__button_height.grid(row=2, column=0, sticky=W + E)
+        self.__button_height.grid(row=3, column=0, sticky=W + E)
+
+        self.__button_assign_characters = Button(self.__frame2, image=self.__cross_img, text="Assign Characters", compound="left",
+                                      state=DISABLED, command=self.__assign_character)
+        self.__button_assign_characters.grid(row=2, column=0, sticky=W + E)
+
+        self.__seperator_label = Label(self.__frame2, text=" ")
+        self.__seperator_label.grid(row=4, column=0)
+
         self.__button_cancel = Button(self.__frame2, text="Cancel", state=DISABLED, command=self.__show)
-        self.__button_cancel.grid(row=3, column=0, sticky=W + E)
+        self.__button_cancel.grid(row=5, column=0, sticky=W + E)
         self.__frame2.grid(row=3, column=2)
 
         self.__mouse_binding = ""
@@ -77,9 +85,9 @@ class Main(object):
         self.__new_field_y2 = ""
         self.__rectangle = ""
         self.__fields = []
-        self.__characterfield = ["", "", ""]
+        self.__character_field = [None, None, None]
         self.__selected = "lat"  # "lat" "lon" "height"
-        self.__mainimage = ""
+        self.__mainimage = None
 
         self.__w.bind("<Button-1>", self.__mouse_click)
         self.__listbox.insert(END, "Import an image,")
@@ -106,10 +114,10 @@ class Main(object):
         menubar.add_cascade(label="File", menu=filemenu)
         self.__master.bind_all("<Control-v>", self.__grab_image)
         # Do_menue
-        do_menue = Menu(menubar, tearoff=0)
-        do_menue.add_command(label="Assign Characters",
+        extras_menue = Menu(menubar, tearoff=0)
+        extras_menue.add_command(label="Optimize",
                              command=self.__assign_character)
-        menubar.add_cascade(label="Do", menu=do_menue)
+        menubar.add_cascade(label="Extra's", menu=extras_menue)
         # helpmenu
         helpmenu = Menu(menubar, tearoff=0)
         helpmenu.add_command(label="About", command=self.__about)
@@ -117,33 +125,36 @@ class Main(object):
         self.__master.config(menu=menubar)
 
     def __delete_picture(self):
-        os.remove(self.__mainimage)
-        self.__mainimage = ""
-        self.__show()
+        if self.__mainimage is not None:
+            os.remove(self.__mainimage)
+            self.__mainimage = None
+            self.__show()
 
     def __next_picture(self):
-        allpictures = self.__listdir_fullpath("saves/" + self.__sessionname + "/images/")
-        new = ""
-        for i in range(len(allpictures)):
-            if allpictures[i] == self.__mainimage:
-                if i + 1 > len(allpictures) - 1:
-                    new = allpictures[0]
-                else:
-                    new = allpictures[i + 1]
-        self.__mainimage = new
-        self.__show()
+        if self.__mainimage is not None:
+            allpictures = self.__listdir_fullpath("saves/" + self.__sessionname + "/images/")
+            new = ""
+            for i in range(len(allpictures)):
+                if allpictures[i] == self.__mainimage:
+                    if i + 1 > len(allpictures) - 1:
+                        new = allpictures[0]
+                    else:
+                        new = allpictures[i + 1]
+            self.__mainimage = new
+            self.__show()
 
     def __prev_picture(self):
-        allpictures = self.__listdir_fullpath("saves/" + self.__sessionname + "/images/")
-        new = ""
-        for i in range(len(allpictures)):
-            if allpictures[i] == self.__mainimage:
-                if i > 0:
-                    new = allpictures[i - 1]
-                else:
-                    new = allpictures[-1]
-        self.__mainimage = new
-        self.__show()
+        if self.__mainimage is not None:
+            allpictures = self.__listdir_fullpath("saves/" + self.__sessionname + "/images/")
+            new = ""
+            for i in range(len(allpictures)):
+                if allpictures[i] == self.__mainimage:
+                    if i > 0:
+                        new = allpictures[i - 1]
+                    else:
+                        new = allpictures[-1]
+            self.__mainimage = new
+            self.__show()
 
     def __assign_character(self):
         self.__extract_number()
@@ -154,7 +165,7 @@ class Main(object):
 
     def __extract_number(self):
         self.__save_file()
-        Extract_Number(self.__characterfield, self.__listdir_fullpath("saves/" + self.__sessionname + "/images/"),
+        Extract_Number(self.__character_field, self.__listdir_fullpath("saves/" + self.__sessionname + "/images/"),
                        self.__sessionname)
         self.__listbox.delete(0, END)
         self.__listbox.insert(END, "Sort the characters,")
@@ -184,8 +195,9 @@ class Main(object):
             self.__set_session_name()
         image = askopenfilename(filetypes=[("Image Files", ("*.jpg", "*.jpeg"))])
         if (image != "()") and (image != ""):
-            self.__mainimage = image
             shutil.copy(image, "saves/" + self.__sessionname + "/images/")
+            image = ntpath.basename(image)
+            self.__mainimage = "saves/" + self.__sessionname + "/images/" + image
             self.__listbox.delete(0, END)
             self.__listbox.insert(END, "Select latitude and")
             self.__listbox.insert(END, "Select longitude field")
@@ -226,9 +238,9 @@ class Main(object):
         return [os.path.join(d, f) for f in os.listdir(d)]
 
     def __show(self):
-        if self.__sessionname == "":
+        if self.__mainimage is None:
             image = Image.open("files/background")
-        elif self.__mainimage == "":
+        elif self.__mainimage is None:
             last_image = self.__listdir_fullpath("saves/" + self.__sessionname + "/images/")
             image = Image.open(last_image[0])
             self.__mainimage = last_image[0]
@@ -243,19 +255,19 @@ class Main(object):
         # Button stuff
         # Button Latitude
         self.__button_lat.config(text="Latitude", command=lambda: self.__set_field("lat"))
-        if self.__characterfield[0] != "":
+        if self.__character_field[0] is not None:
             self.__button_lat.config(image=self.__check_img)
         else:
             self.__button_lat.config(image=self.__cross_img)
         # Button Longitude
         self.__button_lon.config(text="Longitude", command=lambda: self.__set_field("lon"))
-        if self.__characterfield[1] != "":
+        if self.__character_field[1] is not None:
             self.__button_lon.config(image=self.__check_img)
         else:
             self.__button_lon.config(image=self.__cross_img)
         # Button Height
         self.__button_height.config(text="Height", command=lambda: self.__set_field("height"))
-        if self.__characterfield[2] != "":
+        if self.__character_field[2] is not None:
             self.__button_height.config(image=self.__check_img)
         else:
             self.__button_height.config(image=self.__cross_img)
@@ -263,14 +275,21 @@ class Main(object):
         if self.__sessionname != "":
             self.__button_lat["state"] = "normal"
             self.__button_lon["state"] = "normal"
+            if self.__character_field[0] is not None and self.__character_field[1] is not None:
+                self.__button_assign_characters["state"] = "normal"
+            else:
+                self.__button_assign_characters["state"] = "disabled"
             if os.path.exists("saves/" + self.__sessionname + "/" + self.__sessionname + ".templates"):
                 self.__button_height["state"] = "normal"
+                self.__button_assign_characters.config(image=self.__check_img)
             else:
                 self.__button_height["state"] = "disabled"
+                self.__button_assign_characters.config(image=self.__cross_img)
         else:
             self.__button_lat["state"] = "disabled"
             self.__button_lon["state"] = "disabled"
             self.__button_height["state"] = "disabled"
+            self.__button_assign_characters["state"] = "disabled"
 
         self.__new_field_name = ""
         self.__new_field_x1 = ""
@@ -285,16 +304,32 @@ class Main(object):
     def __open_session(self):
         folder = str(askdirectory(initialdir="saves/")).split("/")
         self.__sessionname = folder[-1]
-        self.__characterfield = ["", "", ""]
+        self.__character_field = [None, None, None]
         self.__imageindex = -1
         self.__listbox.delete(0, END)
-        self.__mainimage = ""
+        self.__mainimage = self.__listdir_fullpath("saves/" + self.__sessionname + "/images/")[0]
+        self.create_field("saves/" + self.__sessionname + "/" + self.__sessionname + ".coo")
         self.__show()
+
+    def create_field(self, coofile):
+        if os.path.exists(coofile):
+            f = open(coofile, "r")
+            temp_field = []
+            for line in f:
+                line = line.replace("\n", "")
+                if line is not "":
+                    temp_field.append(line)
+                else:
+                    temp_field.append(None)
+            self.__character_field = temp_field
 
     def __save_file(self):
         f = open("saves/" + self.__sessionname + "/" + self.__sessionname + ".coo", "w")
-        for i in self.__characterfield:
-            f.write(i + "\n")
+        for i in self.__character_field:
+            if i is not None:
+                f.write(i + "\n")
+            else:
+                f.write("" + "\n")
         f.close()
 
     def __manage_loaded_images(self):
@@ -421,7 +456,7 @@ class Main(object):
         self.__fields[0][2] = int(self.__fields[0][2]) + (int(width - x2) - 2)
         self.__fields[0][3] = int(self.__fields[0][3]) + (int(height - y2) - 1)
         # 2 linke partner einfuegen
-        temp = self.__characterfield[0].split(";")
+        temp = self.__character_field[0].split(";")
         temp2 = []
         for i in range(len(temp)):
             temp2.append(temp[i].split(","))
@@ -431,6 +466,10 @@ class Main(object):
                 [self.__fields[0][0] - i * distance, self.__fields[0][1], self.__fields[0][2] - i * distance,
                  self.__fields[0][3]])
         self.__fields.reverse()
+
+        for i in range(len(self.__fields)):
+                self.__w.create_rectangle(self.__fields[i][0], self.__fields[i][1], self.__fields[i][2] - 1,
+                                          self.__fields[i][3] - 1, outline='blue')
 
         self.__button_height.config(text="Save", command=lambda: self.__save_field("height"))
 
@@ -446,13 +485,13 @@ class Main(object):
         text2save = text2save.replace(";;", "")
 
         if source == "lat":
-            self.__characterfield[0] = text2save
+            self.__character_field[0] = text2save
         elif source == "lon":
-            self.__characterfield[1] = text2save
+            self.__character_field[1] = text2save
         elif source == "height":
-            self.__characterfield[2] = text2save
+            self.__character_field[2] = text2save
 
-        if (self.__characterfield[0] != "") and (self.__characterfield[1] != ""):
+        if (self.__character_field[0] is not None) and (self.__character_field[1] is not None):
             self.__listbox.delete(0, END)
             self.__listbox.insert(END, "Start \"extract number\"")
         self.__save_file()
@@ -675,19 +714,20 @@ class Extract_Number:
         for k in range(len(images)):
             image = pygame.image.load(images[k])
             for i in fields:
-                i2 = i
-                i2 = i2.split(";")
-                if i2[0] != "":
-                    for l in i2:
-                        l = l.split(",")
-                        x1 = int(l[0])
-                        y1 = int(l[1])
-                        x2 = int(l[2])
-                        y2 = int(l[3])
-                        cropped = pygame.Surface((x2 - x1, y2 - y1))
-                        cropped.blit(image, (0, 0), (x1, y1, x2, y2))
-                        namecounter += 1
-                        pygame.image.save(cropped, "saves/" + name + "/temp/" + str(namecounter) + ".jpeg")
+                if i is not None:
+                    i2 = i
+                    i2 = i2.split(";")
+                    if i2[0] != "":
+                        for l in i2:
+                            l = l.split(",")
+                            x1 = int(l[0])
+                            y1 = int(l[1])
+                            x2 = int(l[2])
+                            y2 = int(l[3])
+                            cropped = pygame.Surface((x2 - x1, y2 - y1))
+                            cropped.blit(image, (0, 0), (x1, y1, x2, y2))
+                            namecounter += 1
+                            pygame.image.save(cropped, "saves/" + name + "/temp/" + str(namecounter) + ".jpeg")
 
 
 class Assign_Characters(Frame):
